@@ -1,7 +1,17 @@
 import pandas as pd
 
+df_TablaSoluING = pd.DataFrame()
+flypasID_df = pd.DataFrame()
+
 def procesar_archivos(flypass_df, general_df, descargue_df, trayectos_df, acumulado_df):
-    # Unir los DataFrames flypass_df y general_df
-    resultado = pd.concat([flypass_df, general_df], ignore_index=True)
-    
-    return resultado
+    flypass_df = modificacion_flypass(flypass_df)
+    df_TablaSoluING = flypass_df
+    # Devolver el DataFrame modificado
+    return df_TablaSoluING
+
+def modificacion_flypass(flypass_df):
+    # Insertar una nueva columna "ID" en el DataFrame flypass_df
+    flypass_df.insert(0, "ID", range(1, len(flypass_df) + 1))
+    global flypasID_df  # Para modificar la variable global
+    flypasID_df = flypass_df  # Asignar el DataFrame modificado a la variable global
+    return flypass_df
