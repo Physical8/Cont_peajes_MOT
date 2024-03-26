@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
+from procesamiento import procesar_archivos
 import pandas as pd
 import threading
 
@@ -86,14 +87,15 @@ def check_archivos_cargados():
 # Función para procesar la información entre los archivos cargados
 def procesar_informacion():
     mostrar_mensaje(ruta_label, "Procesando... Por favor, espere.")
-    # Aquí puedes agregar tu lógica de procesamiento entre los archivos Flypass y General
-    # Por ejemplo:
-    # Resultado = Flypass.merge(General, on='columna_comun')
-    # Realiza tus modificaciones y ajustes entre los archivos aquí
-    
+    # Llama a la función de procesamiento y pasa los DataFrames de los archivos cargados como argumentos
+    resultado_procesado = procesar_archivos(Flypass, General, Descargue, Trayectos, Acumulado)
     # Muestra un mensaje de éxito y habilita el botón para descargar el resultado
     mostrar_mensaje(resultado_label, "Información procesada correctamente.")
     descargar_resultado_button.config(state=tk.NORMAL)
+    # Asigna el resultado procesado a una variable global o utiliza según tu necesidad
+    global Resultado
+    Resultado = resultado_procesado
+
 
 # Función para descargar el resultado del procesamiento
 def descargar_resultado():
@@ -108,7 +110,7 @@ def descargar_resultado():
 # Crear la ventana principal de Tkinter
 root = tk.Tk()
 root.title("Procesamiento de Archivos")
-root.geometry("800x650")
+root.geometry("750x700")
 
 # Etiquetas para mostrar mensajes
 msg1_label = tk.Label(root, text="1. Digite el periodo de contabilización con este formato DD/MM/AAAA")
@@ -141,11 +143,11 @@ trayectos_label.grid(row=8, column=2, padx=10, pady=10)
 acumulado_label = tk.Label(root, text="")
 acumulado_label.grid(row=9, column=2, padx=10, pady=10)  
 
-resultado_label = tk.Label(root, text="")
-resultado_label.grid(row=6, column=1, padx=10, pady=10)  
+resultado_label = tk.Label(root, text="Resultado")
+resultado_label.grid(row=13, column=2, padx=10, pady=10)  
 
-ruta_label = tk.Label(root, text="")
-ruta_label.grid(row=7, column=1, padx=10, pady=10)  
+ruta_label = tk.Label(root, text="Ruta")
+ruta_label.grid(row=16, column=2, padx=10, pady=10)  
 
 fecha_guardada_label = tk.Label(root, text="")
 fecha_guardada_label.grid(row=3, column=0, columnspan=4, padx=10, pady=10)  
