@@ -84,7 +84,7 @@ def descargar_en_hilo(data):
     file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
     if file_path:
         data.to_excel(file_path, index=False)
-        mostrar_mensaje(ruta_label, f"Resultado guardado en {file_path}")
+        mostrar_mensaje(ruta_label, f"Proceso finalizado, el resultado se guardó en {file_path}")
     else:
         mostrar_mensaje(ruta_label, "Guardado cancelado")
 
