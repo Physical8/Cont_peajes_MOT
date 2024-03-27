@@ -8,19 +8,35 @@ import threading
 fecha_inicio = None
 fecha_fin = None
 
+# Diccionarios para los nombres de los meses y los cortes
+meses = {
+    1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril", 5: "Mayo", 6: "Junio",
+    7: "Julio", 8: "Agosto", 9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+}
 
-# Botón para confirmar y guardar las fechas
-def guardar_fechas():
+cortes = {
+    "Corte 1": (1, 7), "Corte 2": (8, 14), "Corte 3": (15, 21), "Corte 4": (22, 31)
+}
+
+# Función para actualizar las fechas de inicio y fin según la selección de los menús desplegables
+def actualizar_fechas():
     global fecha_inicio, fecha_fin
-    fecha_inicio = fecha_inicio_entry.get()
-    fecha_fin = fecha_fin_entry.get()
-    print(f"Fecha inicio es {fecha_inicio} y la Fecha fin es {fecha_fin}")
-    mostrar_mensaje(fecha_guardada_label, "Fechas guardadas correctamente.")
-    # Deshabilitar los campos de entrada
-    fecha_inicio_entry.config(state="disabled")
-    fecha_fin_entry.config(state="disabled")
-    check_archivos_cargados()
-
+    mes_index = list(meses.keys())[list(meses.values()).index(mes_select.get())]  # Obtiene el índice del mes seleccionado
+    corte_seleccionado = corte_select.get()
+    if mes_index in meses.keys() and corte_seleccionado in cortes.keys():
+        dia_inicio, dia_fin = cortes[corte_seleccionado]
+        fecha_inicio = f"{dia_inicio:02d}/{mes_index:02d}/2024"
+        fecha_fin = f"{dia_fin:02d}/{mes_index:02d}/2024"
+        # Deshabilitar los menús desplegables después de confirmar la selección
+        mes_dropdown["state"] = "disabled"
+        corte_dropdown["state"] = "disabled"
+        confirmar_button.config(state="disabled")
+        # Verificar en consola
+        print("Fechas")
+        print(fecha_inicio)
+        print(fecha_fin)
+        # Verificar si todos los archivos están cargados y habilitar el botón de procesamiento
+        check_archivos_cargados()
 
 # Función para cargar un archivo de Excel
 def cargar_archivo():
@@ -80,10 +96,10 @@ def cargar_acumulado():
 def check_archivos_cargados():
     if 'Flypass' in globals() and 'General' in globals() and 'Descargue' in globals() and 'Trayectos' in globals() and 'Acumulado' in globals():
         if fecha_inicio is not None and fecha_fin is not None:  # Verifica si ambas fechas no son None
-            mostrar_mensaje(msg5_label, "Archivos Cargados. ¡Listos para procesar!")
+            mostrar_mensaje(msg5_label, "¡Todo listo\npara procesar!")
             procesar_button.config(state=tk.NORMAL)
         else:
-            mostrar_mensaje(msg5_label, "Archivos Cargados. Falta definir las fechas")
+            mostrar_mensaje(msg5_label, "Archivos Cargados.\nFalta definir las fechas")
 
 # Función para procesar la información entre los archivos cargados
 def procesar_informacion():
@@ -111,19 +127,34 @@ def descargar_resultado():
 # Crear la ventana principal de Tkinter
 root = tk.Tk()
 root.title("Sistema de contabilización de Peajes")
-root.geometry("750x700")
+
+# Obtener las dimensiones de la pantalla
+screen_width = root.winfo_screenwidth()
+screen_height = root.winfo_screenheight()
+
+# Definir las dimensiones de la ventana
+window_width = 750
+window_height = 700
+
+# Calcular la posición para centrar la ventana
+x = (screen_width // 2) - (window_width // 2)
+y = (screen_height // 2) - (window_height // 2)
+
+# Establecer la geometría de la ventana
+root.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
 
 # Etiquetas para mostrar mensajes
-msg1_label = tk.Label(root, text="1. Digite el periodo de contabilización con este formato DD/MM/AAAA")
-msg1_label.grid(row=1, column=1, columnspan=2, padx=10, pady=10)
+msg1_label = tk.Label(root, text="1. Defina los parámetros inciales:", justify="left")
+msg1_label.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky='w')
 
 
 
 fecha_guardada_label = tk.Label(root, text="")
 fecha_guardada_label.grid(row=3, column=0, columnspan=4, padx=10, pady=10)
 
-msg2_label = tk.Label(root, text="          2. Cargue los siguientes archivos:")
-msg2_label.grid(row=4, column=0, columnspan=2, padx=10, pady=10) 
+msg2_label = tk.Label(root, text="2. Cargue los siguientes archivos:")
+msg2_label.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky='w') 
 
 flypass_label = tk.Label(root, text="")
 flypass_label.grid(row=5, column=2, padx=10, pady=10)  
@@ -140,17 +171,17 @@ trayectos_label.grid(row=8, column=2, padx=10, pady=10)
 acumulado_label = tk.Label(root, text="")
 acumulado_label.grid(row=9, column=2, padx=10, pady=10) 
 
-msg5_label = tk.Label(root, text="")
+msg5_label = tk.Label(root, text="\n")
 msg5_label.grid(row=10, column=2, columnspan=2, padx=10, pady=10) 
 
-msg3_label = tk.Label(root, text="          3. Ejecute el proceso:")
-msg3_label.grid(row=11, column=0, columnspan=2, padx=10, pady=10) 
+msg3_label = tk.Label(root, text="3. Ejecute el proceso:", justify="left")
+msg3_label.grid(row=11, column=0, columnspan=2, padx=10, pady=10, sticky='w') 
 
 resultado_label = tk.Label(root, text="")
 resultado_label.grid(row=13, column=2, columnspan=2, padx=10, pady=10)  
 
-msg4_label = tk.Label(root, text="          4. Descargue los archivos:")
-msg4_label.grid(row=14, column=0, columnspan=2, padx=10, pady=10) 
+msg4_label = tk.Label(root, text="4. Descargue los archivos:", justify="left")
+msg4_label.grid(row=14, column=0, columnspan=2, padx=10, pady=10, sticky='w')
 
 
 
@@ -181,22 +212,31 @@ cargar_acumulado_button = tk.Button(root, text="Cargar Acumulado", command=carga
 cargar_acumulado_button.grid(row=9, column=1, padx=10, pady=10) 
 
 
-# Etiquetas y entradas para seleccionar las fechas
-fecha_inicio_label = tk.Label(root, text="Fecha de inicio:")
-fecha_inicio_label.grid(row=2, column=1, padx=10, pady=10)
+# Menús desplegables para seleccionar el mes y el corte
+mes_select = tk.StringVar(root)
+corte_select = tk.StringVar(root)
 
-fecha_inicio_entry = tk.Entry(root)
-fecha_inicio_entry.grid(row=2, column=2, padx=10, pady=10)
+mes_select.set("Seleccione Mes")
+corte_select.set("Seleccione Corte")
 
-fecha_fin_label = tk.Label(root, text="Fecha de fin:")
-fecha_fin_label.grid(row=2, column=3, padx=10, pady=10)
+# Define el tamaño estándar para los menús desplegables
+menu_width = 20
 
-fecha_fin_entry = tk.Entry(root)
-fecha_fin_entry.grid(row=2, column=4, padx=10, pady=10)
+mes_dropdown = tk.OptionMenu(root, mes_select, *meses.values())
+mes_dropdown.config(width=menu_width)
+mes_dropdown.grid(row=2, column=1, padx=10, pady=10)
+
+corte_dropdown = tk.OptionMenu(root, corte_select, *cortes.keys())
+corte_dropdown.config(width=menu_width)
+corte_dropdown.grid(row=2, column=2, padx=10, pady=10)
+
+# Botón para confirmar selección de fechas
+confirmar_button = tk.Button(root, text="Confirmar Selección", command=actualizar_fechas)
+confirmar_button.grid(row=3, column=1, columnspan=2, padx=10, pady=10)
 
 
-guardar_fechas_button = tk.Button(root, text="Guardar Fechas", command=guardar_fechas)
-guardar_fechas_button.grid(row=2, column=5, columnspan=2, padx=10, pady=10)
+
+
 
 
 # Botón para procesar la información (inicialmente deshabilitado)
