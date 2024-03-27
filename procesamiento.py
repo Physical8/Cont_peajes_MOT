@@ -12,6 +12,27 @@ def procesar_archivos(flypass_df, general_df, descargue_df, trayectos_df, acumul
 def modificacion_flypass(flypass_df):
     # Insertar una nueva columna "ID" en el DataFrame flypass_df
     flypass_df.insert(0, "ID", range(1, len(flypass_df) + 1))
+
+    # ---------------------------------------------------------------------------------------
+    # -------------------------------IMPORTANTE ---------------------------------------------
+
+    # Aca se genera el DataFrame auxiliar para trabajar despues con los pendientes
+
     global flypasID_df  # Para modificar la variable global
     flypasID_df = flypass_df  # Asignar el DataFrame modificado a la variable global
+
+    # ---------------------------------------------------------------------------------------
+
+    #Continuación del proceso de modificacion de Flypass
+    flypass_df['FECHA_APLICACION'] = flypass_df['FECHA_APLICACION'].str.split().str[0]
+
+
+
+
+
+
+
+
+
+
     return flypass_df

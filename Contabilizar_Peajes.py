@@ -115,19 +115,15 @@ root.geometry("750x700")
 
 # Etiquetas para mostrar mensajes
 msg1_label = tk.Label(root, text="1. Digite el periodo de contabilización con este formato DD/MM/AAAA")
-msg1_label.grid(row=1, column=1, columnspan=2, padx=10, pady=10) 
+msg1_label.grid(row=1, column=1, columnspan=2, padx=10, pady=10)
+
+
+
+fecha_guardada_label = tk.Label(root, text="")
+fecha_guardada_label.grid(row=3, column=0, columnspan=4, padx=10, pady=10)
 
 msg2_label = tk.Label(root, text="          2. Cargue los siguientes archivos:")
 msg2_label.grid(row=4, column=0, columnspan=2, padx=10, pady=10) 
-
-msg3_label = tk.Label(root, text="          3. Ejecute el proceso:")
-msg3_label.grid(row=11, column=0, columnspan=2, padx=10, pady=10) 
-
-msg4_label = tk.Label(root, text="          4. Descargue los archivos:")
-msg4_label.grid(row=14, column=0, columnspan=2, padx=10, pady=10) 
-
-msg5_label = tk.Label(root, text="")
-msg5_label.grid(row=10, column=2, columnspan=2, padx=10, pady=10) 
 
 flypass_label = tk.Label(root, text="")
 flypass_label.grid(row=5, column=2, padx=10, pady=10)  
@@ -142,16 +138,30 @@ trayectos_label = tk.Label(root, text="")
 trayectos_label.grid(row=8, column=2, padx=10, pady=10)  
 
 acumulado_label = tk.Label(root, text="")
-acumulado_label.grid(row=9, column=2, padx=10, pady=10)  
+acumulado_label.grid(row=9, column=2, padx=10, pady=10) 
+
+msg5_label = tk.Label(root, text="")
+msg5_label.grid(row=10, column=2, columnspan=2, padx=10, pady=10) 
+
+msg3_label = tk.Label(root, text="          3. Ejecute el proceso:")
+msg3_label.grid(row=11, column=0, columnspan=2, padx=10, pady=10) 
 
 resultado_label = tk.Label(root, text="")
 resultado_label.grid(row=13, column=2, columnspan=2, padx=10, pady=10)  
 
+msg4_label = tk.Label(root, text="          4. Descargue los archivos:")
+msg4_label.grid(row=14, column=0, columnspan=2, padx=10, pady=10) 
+
+
+
+ 
+
+
+
 ruta_label = tk.Label(root, text="")
 ruta_label.grid(row=16, column=0, columnspan=4, padx=10, pady=10)  
 
-fecha_guardada_label = tk.Label(root, text="")
-fecha_guardada_label.grid(row=3, column=0, columnspan=4, padx=10, pady=10)  
+  
 
 
 # Botones para cargar archivos
@@ -185,18 +195,21 @@ fecha_fin_entry = tk.Entry(root)
 fecha_fin_entry.grid(row=2, column=4, padx=10, pady=10)
 
 
-
 guardar_fechas_button = tk.Button(root, text="Guardar Fechas", command=guardar_fechas)
 guardar_fechas_button.grid(row=2, column=5, columnspan=2, padx=10, pady=10)
 
 
 # Botón para procesar la información (inicialmente deshabilitado)
-procesar_button = tk.Button(root, text="Procesar Información", command=procesar_informacion, state=tk.DISABLED)
+procesar_button = tk.Button(root, text="Procesar Información", command=procesar_informacion, width=20, state=tk.DISABLED)
 procesar_button.grid(row=12, column=1, padx=10, pady=10)
 
 # Botón para descargar el resultado (inicialmente deshabilitado)
-descargar_resultado_button = tk.Button(root, text="Descargar Archivo", command=descargar_resultado, state=tk.DISABLED)
+descargar_resultado_button = tk.Button(root, text="Tabla SoluING", command=descargar_resultado, width=20, state=tk.DISABLED)
 descargar_resultado_button.grid(row=15, column=1, padx=10, pady=10)
+
+# Botón para descargar el resultado (inicialmente deshabilitado)
+descargar_resultado2_button = tk.Button(root, text="Pendientes", command=descargar_resultado, width=20, state=tk.DISABLED)
+descargar_resultado2_button.grid(row=15, column=2, padx=10, pady=10)
 
 # Ejecutar el bucle principal de Tkinter
 root.mainloop()
