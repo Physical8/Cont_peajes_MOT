@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog
 from procesamiento import procesar_archivos
 import pandas as pd
+import ctypes
 import threading
 
 # Variables globales para las fechas
@@ -47,6 +48,23 @@ def cargar_archivo():
         return pd.read_excel(file_path, engine='openpyxl')
     else:
         return None
+    
+def cargar_archivo2():
+    root = tk.Tk()
+    root.withdraw()
+    file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx;*.xls")])
+    if file_path:
+        # Leer el archivo Excel sin encabezados
+        df = pd.read_excel(file_path, engine='openpyxl', header=None)
+        
+        # Asignar encabezados manualmente
+        encabezados = df.iloc[2]  # Obtener la tercera fila como encabezados
+        df = df[3:]  # Eliminar las primeras tres filas (encabezados y filas vacías)
+        df.columns = encabezados  # Asignar los encabezados al DataFrame
+        
+        return df
+    else:
+        return None
 
 # Función para mostrar el mensaje de "Cargado exitosamente"
 def mostrar_mensaje(label, texto):
@@ -71,7 +89,7 @@ def cargar_general():
 # Función para cargar el archivo "MF Descargue"
 def cargar_descargue():
     global Descargue
-    Descargue = cargar_archivo()
+    Descargue = cargar_archivo2()
     if Descargue is not None:
         mostrar_mensaje(descargue_label, "Cargado exitosamente")
         check_archivos_cargados()
@@ -94,7 +112,8 @@ def cargar_acumulado():
 
 # Función para comprobar si todos los archivos están cargados y habilitar el botón de procesamiento
 def check_archivos_cargados():
-    if 'Flypass' in globals() and 'General' in globals() and 'Descargue' in globals() and 'Trayectos' in globals() and 'Acumulado' in globals():
+    if 'Flypass' in globals() and 'Descargue' in globals():
+    #if 'Flypass' in globals() and 'General' in globals() and 'Descargue' in globals() and 'Trayectos' in globals() and 'Acumulado' in globals():
         if fecha_inicio is not None and fecha_fin is not None:  # Verifica si ambas fechas no son None
             mostrar_mensaje(msg5_label, "¡Todo listo\npara procesar!")
             procesar_button.config(state=tk.NORMAL)
@@ -105,7 +124,8 @@ def check_archivos_cargados():
 def procesar_informacion():
     mostrar_mensaje(resultado_label, "Procesando... Por favor, espere.")
     # Llama a la función de procesamiento y pasa los DataFrames de los archivos cargados como argumentos
-    resultado_procesado = procesar_archivos(Flypass, General, Descargue, Trayectos, Acumulado)
+    resultado_procesado = procesar_archivos(Flypass, Descargue,fecha_inicio,fecha_fin)
+    #resultado_procesado = procesar_archivos(Flypass, General, Descargue, Trayectos, Acumulado,fecha_inicio,fecha_fin)
     # Muestra un mensaje de éxito y habilita el botón para descargar el resultado
     mostrar_mensaje(resultado_label, "Información procesada correctamente.")
     descargar_resultado_button.config(state=tk.NORMAL)
@@ -120,10 +140,17 @@ def descargar_resultado():
     file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
     if file_path:
         Resultado.to_excel(file_path, index=False)
-        mostrar_mensaje(ruta_label, f"Proceso finalizado. Resultado guardado en: {file_path}")
+        mostrar_mensaje(ruta_label, f"Proceso finalizado.\nResultado guardado en: {file_path}")
     else:
         mostrar_mensaje(ruta_label, "Guardado cancelado")
 
+# Obtener el alto de la barra de tareas
+def get_taskbar_height():
+    hwnd = ctypes.windll.user32.FindWindowW(u'Shell_TrayWnd', None)
+    rect = ctypes.wintypes.RECT()
+    ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(rect))
+    return rect.bottom - rect.top
+    
 # Crear la ventana principal de Tkinter
 root = tk.Tk()
 root.title("Sistema de contabilización de Peajes")
@@ -132,13 +159,16 @@ root.title("Sistema de contabilización de Peajes")
 screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
 
+# Obtener el alto de la barra de tareas
+taskbar_height = get_taskbar_height()
+
 # Definir las dimensiones de la ventana
 window_width = 750
-window_height = 700
+window_height = 735
 
 # Calcular la posición para centrar la ventana
 x = (screen_width // 2) - (window_width // 2)
-y = (screen_height // 2) - (window_height // 2)
+y = (screen_height // 2) - (window_height // 2) - (taskbar_height // 2)
 
 # Establecer la geometría de la ventana
 root.geometry(f"{window_width}x{window_height}+{x}+{y}")
