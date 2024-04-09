@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog
 from procesamiento import procesar_archivos
+from datetime import datetime
 import pandas as pd
 import ctypes
 import threading
@@ -28,6 +29,8 @@ def actualizar_fechas():
         dia_inicio, dia_fin = cortes[corte_seleccionado]
         fecha_inicio = f"{dia_inicio:02d}/{mes_index:02d}/2024"
         fecha_fin = f"{dia_fin:02d}/{mes_index:02d}/2024"
+        fecha_inicio = datetime.strptime(fecha_inicio, "%d/%m/%Y").strftime("%Y-%m-%d")
+        fecha_fin = datetime.strptime(fecha_fin, "%d/%m/%Y").strftime("%Y-%m-%d")
         # Deshabilitar los menús desplegables después de confirmar la selección
         mes_dropdown["state"] = "disabled"
         corte_dropdown["state"] = "disabled"
@@ -123,6 +126,7 @@ def check_archivos_cargados():
 # Función para procesar la información entre los archivos cargados
 def procesar_informacion():
     mostrar_mensaje(resultado_label, "Procesando... Por favor, espere.")
+    
     # Llama a la función de procesamiento y pasa los DataFrames de los archivos cargados como argumentos
     resultado_procesado = procesar_archivos(Flypass, Descargue,fecha_inicio,fecha_fin)
     #resultado_procesado = procesar_archivos(Flypass, General, Descargue, Trayectos, Acumulado,fecha_inicio,fecha_fin)
