@@ -84,7 +84,7 @@ def cargar_flypass():
 # Función para cargar el archivo "MF General"
 def cargar_general():
     global General
-    General = cargar_archivo()
+    General = cargar_archivo2()
     if General is not None:
         mostrar_mensaje(general_label, "Cargado exitosamente")
         check_archivos_cargados()
@@ -115,7 +115,7 @@ def cargar_acumulado():
 
 # Función para comprobar si todos los archivos están cargados y habilitar el botón de procesamiento
 def check_archivos_cargados():
-    if 'Flypass' in globals() and 'Descargue' in globals():
+    if 'Flypass' in globals() and 'Descargue' in globals() and 'General' in globals():
     #if 'Flypass' in globals() and 'General' in globals() and 'Descargue' in globals() and 'Trayectos' in globals() and 'Acumulado' in globals():
         if fecha_inicio is not None and fecha_fin is not None:  # Verifica si ambas fechas no son None
             mostrar_mensaje(msg5_label, "¡Todo listo\npara procesar!")
@@ -128,7 +128,7 @@ def procesar_informacion():
     mostrar_mensaje(resultado_label, "Procesando... Por favor, espere.")
     
     # Llama a la función de procesamiento y pasa los DataFrames de los archivos cargados como argumentos
-    resultado_procesado = procesar_archivos(Flypass, Descargue,fecha_inicio,fecha_fin)
+    resultado_procesado = procesar_archivos(Flypass, Descargue,fecha_inicio,fecha_fin,General)
     #resultado_procesado = procesar_archivos(Flypass, General, Descargue, Trayectos, Acumulado,fecha_inicio,fecha_fin)
     # Muestra un mensaje de éxito y habilita el botón para descargar el resultado
     mostrar_mensaje(resultado_label, "Información procesada correctamente.")
