@@ -4,6 +4,7 @@ from procesamiento import procesar_archivos
 from datetime import datetime
 import pandas as pd
 import ctypes
+import os
 import threading
 
 # Variables globales para las fechas
@@ -48,7 +49,7 @@ def cargar_archivo():
     root.withdraw()
     file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx;*.xls")])
     if file_path:
-        return pd.read_excel(file_path, engine='openpyxl')
+        return pd.read_excel(file_path, engine='openpyxl'), os.path.basename(file_path)
     else:
         return None
     
@@ -65,7 +66,7 @@ def cargar_archivo2():
         df = df[3:]  # Eliminar las primeras tres filas (encabezados y filas vacías)
         df.columns = encabezados  # Asignar los encabezados al DataFrame
         
-        return df
+        return df, os.path.basename(file_path)
     else:
         return None
 
@@ -76,41 +77,46 @@ def mostrar_mensaje(label, texto):
 # Función para cargar el archivo "Flypass"
 def cargar_flypass():
     global Flypass
-    Flypass = cargar_archivo()
+    Flypass, nombre_archivo = cargar_archivo()
     if Flypass is not None:
-        mostrar_mensaje(flypass_label, "Cargado exitosamente")
+        mensaje = f"Cargado exitosamente: {nombre_archivo}"
+        mostrar_mensaje(flypass_label, mensaje)
         check_archivos_cargados()
 
 # Función para cargar el archivo "MF General"
 def cargar_general():
     global General
-    General = cargar_archivo2()
+    General, nombre_archivo = cargar_archivo2()
     if General is not None:
-        mostrar_mensaje(general_label, "Cargado exitosamente")
+        mensaje = f"Cargado exitosamente: {nombre_archivo}"
+        mostrar_mensaje(general_label, mensaje)
         check_archivos_cargados()
 
 # Función para cargar el archivo "MF Descargue"
 def cargar_descargue():
     global Descargue
-    Descargue = cargar_archivo2()
+    Descargue, nombre_archivo = cargar_archivo2()
     if Descargue is not None:
-        mostrar_mensaje(descargue_label, "Cargado exitosamente")
+        mensaje = f"Cargado exitosamente: {nombre_archivo}"
+        mostrar_mensaje(descargue_label, mensaje)
         check_archivos_cargados()
 
 # Función para cargar el archivo "Trayectos"
 def cargar_trayectos():
     global Trayectos
-    Trayectos = cargar_archivo()
+    Trayectos, nombre_archivo = cargar_archivo()
     if Trayectos is not None:
-        mostrar_mensaje(trayectos_label, "Cargado exitosamente")
+        mensaje = f"Cargado exitosamente: {nombre_archivo}"
+        mostrar_mensaje(trayectos_label, mensaje)
         check_archivos_cargados()
 
 # Función para cargar el archivo "Trayectos"
 def cargar_acumulado():
     global Acumulado
-    Acumulado = cargar_archivo()
+    Acumulado, nombre_archivo = cargar_archivo()
     if Acumulado is not None:
-        mostrar_mensaje(acumulado_label, "Cargado exitosamente")
+        mensaje = f"Cargado exitosamente: {nombre_archivo}"
+        mostrar_mensaje(acumulado_label, mensaje)
         check_archivos_cargados()
 
 # Función para comprobar si todos los archivos están cargados y habilitar el botón de procesamiento

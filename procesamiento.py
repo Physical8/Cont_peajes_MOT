@@ -8,6 +8,7 @@ flypasID_df = pd.DataFrame()
 flypass_plantilla = pd.DataFrame()
 df_etapa1 = pd.DataFrame()
 df_etapa2 = pd.DataFrame()
+df_etapa3 = pd.DataFrame()
 flypass_prev_pdte = pd.DataFrame()
 general_df_original = pd.DataFrame()
 
@@ -18,6 +19,7 @@ def procesar_archivos(flypass_df, descargue_df, fecha_inicio_df, fecha_fin_df,ge
     
     # TRANSFORMACION DE ARCHIVO FLYPASS PARA EXTRAER SOLO LOS REGISTROS QUE HACEN PARTE DEL CORTE SOLICITADO
     flypass_df = modificacion_flypass(flypass_df, fecha_inicio_df, fecha_fin_df)
+
     flypass_plantilla = flypass_df.copy()
     
     # TRANSFORMACIÓN DE ARCHIVO MF DESCARGUE PARA DEJAR SOLO LA PLACA - MANIFIESTO - CARGUE - DESCARGUE
@@ -36,10 +38,22 @@ def procesar_archivos(flypass_df, descargue_df, fecha_inicio_df, fecha_fin_df,ge
     #LAS FILAS VACIAS PARA BUSCAR EN GENERAL
     df_etapa2 = cruce_acu_general(flypass_plantilla,df_etapa1)
 
-    #TRANSFORMACION DE ARCHIVO ETAPA2 PARA EX
+    #DIVISION DEL ARCHIVO df_etapa2 PARTE 1 = REGISTROS VACIOS  PARTE 2 = REGISTROS CON INFORMACION
+    # Dividir el DataFrame en dos partes
+    etapa2_con_datos = df_etapa2[df_etapa2['MFTO ENCONTRADO'].notnull()]  # Filas donde la columna MFTO tiene datos
+    etapa2_sin_datos = df_etapa2[df_etapa2['MFTO ENCONTRADO'].isnull()]    # Filas donde la columna MFTO está vacía
 
+    #TRANSFORMACION DE ARCHIVO sin datos para unir posteriormente
 
-    df_TablaSoluING = df_etapa2
+    etapa2_sin_datos = modificar_sin_datos(etapa2_sin_datos)
+
+    df_etapa3 = cruce_fly_general(etapa2_sin_datos,general_df)
+
+    flypass_prev_pdte = hallar_pendientes(etapa2_sin_datos,df_etapa3)
+
+    pendientes_v1 = flypass_prev_pdte[flypass_prev_pdte['MFTO ENCONTRADO'].isnull()]    # Filas donde la columna MFTO está vacía
+
+    df_TablaSoluING = pendientes_v1
 
     # Devolver el DataFrame modificado
     return df_TablaSoluING
@@ -84,29 +98,21 @@ def modificacion_descargue(descargue_df):
     # Eliminar las columnas
     columnas_a_eliminar = ['VIAJE','TRAILER','CLIENTE','ORIGEN','DESTINO','INICIO VIAJE','TIEMPO EN RUTA']
     descargue_df = descargue_df.drop(columns=columnas_a_eliminar)
-    descargue_df = descargue_df.sort_values(by=['PLACA', 'MFTO'], ascending=[True, True])
+    
 
     #Se ajusta el nombre del encabezado de la columna para poder aplicar la logica de hallar la fecha y hora de cargue
     descargue_df = descargue_df.rename(columns={'ENTRADA DESCARGUE': 'DESCARGUE'})
 
+    descargue_df = descargue_df.sort_values(by=['PLACA', 'DESCARGUE'], ascending=[True, True])
 
     # ---------------- LOGICA PARA HALLAR FECHA Y HORA DE CARGUE A PARTIR DE LA FECHA DE DESCARGUE DEL ARCHIVO ---------
 
+    # Calcular la fecha de descargue
+    descargue_df['CARGUE'] = descargue_df.groupby('PLACA')['DESCARGUE'].shift(1)
 
-    # Ignorar la advertencia FutureWarning específica
-    warnings.filterwarnings("ignore", message="Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated.*", category=FutureWarning)
-
-    # Calcular la diferencia de tiempo entre DESCARGUE de cada PLACA
-    descargue_df['Diferencia'] = descargue_df.groupby('PLACA')['DESCARGUE'].diff().fillna(pd.Timedelta(seconds=0))
-
-    # Convertir la columna 'Diferencia' a tipo timedelta
-    descargue_df['Diferencia'] = descargue_df['Diferencia'].astype('timedelta64[ns]')
-
-    # Calcular la fecha y hora de cargue usando la lógica deseada
-    descargue_df['CARGUE'] = descargue_df['DESCARGUE'] - descargue_df['Diferencia']
-
-    # Llenar la primera fila de la columna CARGUE con la fecha y hora de DESCARGUE
-    descargue_df.loc[descargue_df.groupby('PLACA').head(1).index, 'CARGUE'] = descargue_df['DESCARGUE']
+    # Para los primeros registros de cada placa, colocar la fecha de cargue como 1 día antes de la fecha de descargue
+    primeros_indices = descargue_df.groupby('PLACA').head(1).index
+    descargue_df.loc[primeros_indices, 'CARGUE'] = descargue_df.loc[primeros_indices, 'DESCARGUE'] - pd.Timedelta(days=1)
 
     # Reorganizar las columnas cambiando el orden de los nombres de las columnas
     descargue_df = descargue_df[['PLACA', 'MFTO', 'CARGUE', 'DESCARGUE']]
@@ -147,13 +153,19 @@ def asoc_mf_encurso(general_df):
     #Se ajusta el nombre del encabezado de la columna para poder aplicar la logica de hallar la fecha y hora de cargue
     general_df = general_df.rename(columns={'Fecha': 'CARGUE', 'Manifiesto': 'MFTO', 'Placa': 'PLACA'})
 
-    # Agregar la columna DESCARGUE con la fecha de hoy
-    general_df['DESCARGUE'] = pd.to_datetime(date.today())
+    general_df = general_df.sort_values(by=['PLACA', 'CARGUE'], ascending=[True, True])
+
+    # Calcular la fecha de descargue
+    general_df['DESCARGUE'] = general_df.groupby('PLACA')['CARGUE'].shift(-1)
+
+    # Para los últimos registros de cada placa, colocar la fecha de hoy como DESCARGUE
+    ultimos_indices = general_df.groupby('PLACA').tail(1).index
+    general_df.loc[ultimos_indices, 'DESCARGUE'] = pd.Timestamp.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
     # Reorganizar las columnas cambiando el orden de los nombres de las columnas
     general_df = general_df[['PLACA', 'MFTO', 'CARGUE', 'DESCARGUE']]
 
-    general_df = general_df.sort_values(by=['PLACA', 'MFTO'], ascending=[True, True])
+    
 
     return general_df
 
@@ -165,3 +177,47 @@ def cruce_acu_general(flypass_plantilla,df_etapa1):
     df_etapa2 = merged2_df.copy()
 
     return df_etapa2
+
+def modificar_sin_datos(etapa2_sin_datos):
+
+    # Eliminar las columnas
+    columnas_a_eliminar3 = ['FECHA_INGRESO','FECHA_APLICACION','TIPO','DESCRIPCION','TRANSACCION','MONTO','COMISION','VALOR_REAL','SALDO','FECHA_MVTO_y','PLACA_y','MFTO ENCONTRADO']
+    etapa2_sin_datos = etapa2_sin_datos.drop(columns=columnas_a_eliminar3)
+
+    return etapa2_sin_datos
+
+def cruce_fly_general(etapa2_sin_datos,general_df):
+    
+    # Convertimos la columna 'FECHA_MVTO' a tipo datetime en df1
+    etapa2_sin_datos['FECHA_MVTO_x'] = pd.to_datetime(etapa2_sin_datos['FECHA_MVTO_x'])
+
+    etapa2_sin_datos = etapa2_sin_datos.rename(columns={'PLACA_x': 'PLACA'})
+
+    ETP2GEN_merged_df = pd.merge(etapa2_sin_datos, general_df, on='PLACA', how='left')
+
+    # # Filtramos las filas donde la 'FECHA_MVTO' está dentro del rango de 'CARGUE' y 'DESCARGUE'
+    ETP2GEN_filtered_df = ETP2GEN_merged_df[(ETP2GEN_merged_df['FECHA_MVTO_x'] >= ETP2GEN_merged_df['CARGUE']) & (ETP2GEN_merged_df['FECHA_MVTO_x'] <= ETP2GEN_merged_df['DESCARGUE'])]
+
+    # # Creamos la columna 'MFTO ENCONTRADO' con los valores de 'MFTO' cuando la 'PLACA' coincide y la 'FECHA_MVTO' está dentro del rango
+    ETP2GEN_filtered_df.loc[:, 'MFTO ENCONTRADO'] = ETP2GEN_filtered_df['MFTO'].copy()
+
+    # # Cuando la 'PLACA' coincide pero la 'FECHA_MVTO' no está dentro del rango, asignamos 'No encontrado'
+    ETP2GEN_filtered_df.loc[~ETP2GEN_filtered_df['MFTO ENCONTRADO'].notnull(), 'MFTO ENCONTRADO'] = 'No encontrado porque la FECHA_MVTO no está dentro del rango CARGUE y DESCARGUE de la placa correspondiente'
+
+    # # Eliminamos registros duplicados basados en la columna 'PLACA'
+    ETP2GEN_df_acumulado = ETP2GEN_filtered_df.drop_duplicates(subset=['ID'])
+
+    ETP2GEN_df_acumulado = ETP2GEN_df_acumulado[['ID', 'FECHA_MVTO_x', 'PLACA', 'MFTO ENCONTRADO']]
+
+    return ETP2GEN_df_acumulado
+
+def hallar_pendientes(etapa2_sin_datos,df_etapa3):
+    
+    etapa2_sin_datos = etapa2_sin_datos.rename(columns={'PLACA_x': 'PLACA'})
+
+    # Realizamos la fusión de los DataFrames en función de la columna 'ID'
+    merged3_df = pd.merge(etapa2_sin_datos, df_etapa3, on='ID', how='left')
+
+    df_etapaPEN = merged3_df.copy()
+
+    return df_etapaPEN
