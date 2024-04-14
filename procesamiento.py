@@ -53,9 +53,17 @@ def procesar_archivos(flypass_df, descargue_df, fecha_inicio_df, fecha_fin_df,ge
 
     pendientes_v1 = flypass_prev_pdte[flypass_prev_pdte['MFTO ENCONTRADO'].isnull()]    # Filas donde la columna MFTO está vacía
 
-    df_TablaSoluING = pendientes_v1
+    # Unión de los DataFrames donde se hallaron manifiestos, uno con descargue y otro con general - luego organizado por el ID
+    df_concatenado = pd.concat([df_etapa1, df_etapa3]).sort_values(by=['ID'], ascending=[True])
 
-    # Devolver el DataFrame modificado
+    # Ahora relacionar el archivo concatenado con el archivo flypass original para tener un archivo FLypass con todos los posibles MF 
+    df_flypass_MFenc = relacionar_mf(flypass_plantilla,df_concatenado)
+
+    # Extraccion de pendientes
+    df_pendientes = df_flypass_MFenc[df_flypass_MFenc['MFTO ENCONTRADO'].isnull()] 
+
+    df_TablaSoluING = df_pendientes
+
     return df_TablaSoluING
 
 def modificacion_flypass(flypass_df, fecha_inicio_df, fecha_fin_df):
@@ -209,6 +217,8 @@ def cruce_fly_general(etapa2_sin_datos,general_df):
 
     ETP2GEN_df_acumulado = ETP2GEN_df_acumulado[['ID', 'FECHA_MVTO_x', 'PLACA', 'MFTO ENCONTRADO']]
 
+    ETP2GEN_df_acumulado = ETP2GEN_df_acumulado.rename(columns={'FECHA_MVTO_x': 'FECHA_MVTO'})
+
     return ETP2GEN_df_acumulado
 
 def hallar_pendientes(etapa2_sin_datos,df_etapa3):
@@ -221,3 +231,18 @@ def hallar_pendientes(etapa2_sin_datos,df_etapa3):
     df_etapaPEN = merged3_df.copy()
 
     return df_etapaPEN
+
+def relacionar_mf(flypass_plantilla,df_concatenado):
+    
+    # Realizamos la fusión de los DataFrames en función de la columna 'ID'
+    mergedfly_x_mf_df = pd.merge(flypass_plantilla, df_concatenado, on='ID', how='left')
+    # Eliminar las columnas
+    columnas_a_eliminar4 = ['FECHA_MVTO_y','PLACA_y']
+    mergedfly_x_mf_df = mergedfly_x_mf_df.drop(columns=columnas_a_eliminar4)
+
+    mergedfly_x_mf_df = mergedfly_x_mf_df.rename(columns={'PLACA_x': 'PLACA'})
+    mergedfly_x_mf_df = mergedfly_x_mf_df.rename(columns={'FECHA_MVTO_x': 'FECHA_MVTO'})
+
+    df_asoc_x_id = mergedfly_x_mf_df.copy()
+
+    return df_asoc_x_id
