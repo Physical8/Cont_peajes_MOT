@@ -164,7 +164,8 @@ def descargar_resultado(df, nombre):
     file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
     if file_path:
         df.to_excel(file_path, index=False)
-        mostrar_mensaje(ruta_label, f"Proceso finalizado.\nResultado guardado en: {file_path} como {nombre}")
+        # mostrar_mensaje(ruta_label, f"Proceso finalizado.\nResultado guardado en: {file_path} como {nombre}")
+        mostrar_mensaje(ruta_label, f"Proceso finalizado.\nArchivo {nombre} guardado correctamente")
     else:
         mostrar_mensaje(ruta_label, "Guardado cancelado")
 

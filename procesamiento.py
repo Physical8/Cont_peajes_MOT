@@ -127,20 +127,17 @@ def procesar_archivos(flypass_df, descargue_df, fecha_inicio_df, fecha_fin_df,ge
     df_TablaSoluING.drop(columns=['MARCA'], inplace=True)
     df_TablaSoluING = df_TablaSoluING.rename(columns={'Numerox': 'Documento'})
     
-    try:
-        # Intenta convertir la columna "Documento" a números
-        df_TablaSoluING['Documento'] = pd.to_numeric(df_TablaSoluING['Documento'])
-    except ValueError:
-        # Captura cualquier error de conversión
-        # Asigna nuevamente los valores originales a aquellos que generaron el error
-        df_TablaSoluING['Documento'] = df_TablaSoluING['Documento']
+    # Iterar sobre cada valor de la columna "Documento" y aplicar la función try_convert_to_numeric
+    df_TablaSoluING['Documento'] = df_TablaSoluING['Documento'].apply(try_convert_to_numeric)
 
 
     df_acu_master.drop(columns=['Documento'], inplace=True)
     df_acu_master.drop(columns=['MARCA'], inplace=True)
-    df_acumulado_total = df_acu_master.rename(columns={'Numerox': 'Documenticos'})
+    df_acu_master = df_acu_master.rename(columns={'Numerox': 'Documento'})
 
-     
+    df_acu_master['Documento'] = df_acu_master['Documento'].apply(try_convert_to_numeric)
+
+    df_acumulado_total = df_acu_master.copy()
 
     return df_TablaSoluING, df_pendientes, df_acumulado_total
 
@@ -437,3 +434,9 @@ def determinar_tipo_doc(total):
         return 'DFLY'
     else:
         return ''
+    
+def try_convert_to_numeric(value):
+    try:
+        return pd.to_numeric(value)
+    except ValueError:
+        return value
