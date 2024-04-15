@@ -64,10 +64,19 @@ def procesar_archivos(flypass_df, descargue_df, fecha_inicio_df, fecha_fin_df,ge
     # Ahora relacionar el archivo concatenado con el archivo flypass original para tener un archivo FLypass con todos los posibles MF 
     df_flypass_MFenc = relacionar_mf(flypass_plantilla,df_concatenado)
 
+    # Extracción de MF ENCONTRADOS
+    df_materia_prima = df_flypass_MFenc[df_flypass_MFenc['MFTO ENCONTRADO'].notnull()] 
+
     # Extraccion de pendientes
     df_pendientes = df_flypass_MFenc[df_flypass_MFenc['MFTO ENCONTRADO'].isnull()] 
 
-    df_TablaSoluING = flypass_df
+    # Consolidacion de informacion
+    df_mp_consolidada = consolidar_transa(df_materia_prima)
+
+    #Extracción de Informacion de general para armado 1 de TablaSoluING
+    Tabla1 = cruce_con_general(general_df_original,df_mp_consolidada)
+
+    df_TablaSoluING = Tabla1
 
     return df_TablaSoluING, df_pendientes
 
@@ -286,3 +295,49 @@ def relacionar_mf(flypass_plantilla,df_concatenado):
     df_asoc_x_id = mergedfly_x_mf_df.copy()
 
     return df_asoc_x_id
+
+
+def consolidar_transa(df_materia_prima):
+
+    # Eliminar las columnas
+    columnas_a_eliminar5 = ['ID','FECHA_MVTO','FECHA_INGRESO','TIPO','MONTO','COMISION','SALDO']
+    df_matery = df_materia_prima.drop(columns=columnas_a_eliminar5)
+
+    # Extracción del nombre del peaje
+    df_matery['Peaje'] = df_matery['DESCRIPCION'].str.split('-').str[0]
+    df_matery.drop(columns=['DESCRIPCION'], inplace=True)
+
+    df_matery_consol = df_matery.groupby(['FECHA_APLICACION', 'TRANSACCION']).agg({
+    'Peaje': 'first',
+    'VALOR_REAL': 'sum',
+    'PLACA': 'first',
+    'MFTO ENCONTRADO': 'first'
+    }).reset_index()
+
+    df_matery_consol = df_matery_consol.rename(columns={'MFTO ENCONTRADO': 'Manifiesto'})
+    
+    return df_matery_consol
+
+def cruce_con_general(general_df_original,df_mp_consolidada):
+
+    # Eliminar las columnas
+    columnas_a_eliminar6 = ['Viaje', 'Fecha', 'Placa', 'Vinculo', 'Tarifa', 'Flete', 'FleteTotal', 'FleteNeto', 'Primer Anticipo', 'Otros Anticipos', 'Utilidad', '%', 'TipoVehi', 'TipoCarga', 'DescProducto', 'FacturarA', 'LineaNegocio', 'Remesa', 'Nombre Tenedor', 'Apellidos Tenedor', 'Documento Tenedor', 'Carroceria', 'Oficina', 'CentroCosto', 'UsuLiquida', 'UsuDespacha', 'UsuCumple', 'UsuColoca']
+    general_df_original = general_df_original.drop(columns=columnas_a_eliminar6)
+
+    cruce_general = pd.merge(df_mp_consolidada, general_df_original, on='Manifiesto', how='left')
+
+    cruce_general = cruce_general.rename(columns={'PLACA': 'Placa', 'TRANSACCION': 'Referencia1', 'Ruta': 'RUTA', 'Cliente': 'CLIENTE', 'VALOR_REAL': 'Total'})
+
+    # Crear columnas para el año, mes y día
+    cruce_general['Año Apl'] = cruce_general['FECHA_APLICACION'].dt.year
+    cruce_general['Mes Apl'] = cruce_general['FECHA_APLICACION'].dt.month
+    cruce_general['Dia Apl'] = cruce_general['FECHA_APLICACION'].dt.day
+
+    # Concatenar las columnas "Nombre conductor" y "Apellidos conductor" en una nueva columna "CONDUCTOR"
+    cruce_general['CONDUCTOR'] = cruce_general['Nombre conductor'].str.cat(cruce_general['Apellidos conductor'], sep=' ')
+
+    # Eliminar las columnas
+    columnas_a_eliminar7 = ['FECHA_APLICACION','Nombre conductor','Apellidos conductor']
+    cruce_general = cruce_general.drop(columns=columnas_a_eliminar7)
+
+    return cruce_general
