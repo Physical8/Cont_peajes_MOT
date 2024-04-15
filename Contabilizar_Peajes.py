@@ -11,6 +11,8 @@ import threading
 fecha_inicio = None
 fecha_fin = None
 
+Pendientes = pd.DataFrame()
+
 # Diccionarios para los nombres de los meses y los cortes
 meses = {
     1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril", 5: "Mayo", 6: "Junio",
@@ -74,12 +76,21 @@ def cargar_archivo2():
 def mostrar_mensaje(label, texto):
     label.config(text=texto)
 
+# Función para cargar el archivo "Pendientes"
+def cargar_pendientes():
+    global Pendientes
+    Pendientes, nombre_archivo = cargar_archivo()
+    if Pendientes is not None:
+        mensaje = f"{nombre_archivo} cargado correctamente"
+        mostrar_mensaje(pendienticos_label, mensaje)
+        check_archivos_cargados()
+
 # Función para cargar el archivo "Flypass"
 def cargar_flypass():
     global Flypass
     Flypass, nombre_archivo = cargar_archivo()
     if Flypass is not None:
-        mensaje = f"Cargado exitosamente: {nombre_archivo}"
+        mensaje = f"{nombre_archivo} cargado correctamente"
         mostrar_mensaje(flypass_label, mensaje)
         check_archivos_cargados()
 
@@ -88,16 +99,17 @@ def cargar_general():
     global General
     General, nombre_archivo = cargar_archivo2()
     if General is not None:
-        mensaje = f"Cargado exitosamente: {nombre_archivo}"
+        mensaje = f"{nombre_archivo} cargado correctamente"
         mostrar_mensaje(general_label, mensaje)
         check_archivos_cargados()
+
 
 # Función para cargar el archivo "MF Descargue"
 def cargar_descargue():
     global Descargue
     Descargue, nombre_archivo = cargar_archivo2()
     if Descargue is not None:
-        mensaje = f"Cargado exitosamente: {nombre_archivo}"
+        mensaje = f"{nombre_archivo} cargado correctamente"
         mostrar_mensaje(descargue_label, mensaje)
         check_archivos_cargados()
 
@@ -106,7 +118,7 @@ def cargar_trayectos():
     global Trayectos
     Trayectos, nombre_archivo = cargar_archivo()
     if Trayectos is not None:
-        mensaje = f"Cargado exitosamente: {nombre_archivo}"
+        mensaje = f"{nombre_archivo} cargado correctamente"
         mostrar_mensaje(trayectos_label, mensaje)
         check_archivos_cargados()
 
@@ -115,7 +127,7 @@ def cargar_acumulado():
     global Acumulado
     Acumulado, nombre_archivo = cargar_archivo()
     if Acumulado is not None:
-        mensaje = f"Cargado exitosamente: {nombre_archivo}"
+        mensaje = f"{nombre_archivo} cargado correctamente"
         mostrar_mensaje(acumulado_label, mensaje)
         check_archivos_cargados()
 
@@ -132,27 +144,28 @@ def check_archivos_cargados():
 # Función para procesar la información entre los archivos cargados
 def procesar_informacion():
     mostrar_mensaje(resultado_label, "Procesando... Por favor, espere.")
-    
+
     # Llama a la función de procesamiento y pasa los DataFrames de los archivos cargados como argumentos
-    resultado_procesado = procesar_archivos(Flypass, Descargue,fecha_inicio,fecha_fin,General)
+    resultado_procesado = procesar_archivos(Flypass, Descargue,fecha_inicio,fecha_fin,General,Pendientes)
     #resultado_procesado = procesar_archivos(Flypass, General, Descargue, Trayectos, Acumulado,fecha_inicio,fecha_fin)
     # Muestra un mensaje de éxito y habilita el botón para descargar el resultado
     mostrar_mensaje(resultado_label, "Información procesada correctamente.")
     descargar_resultado_button.config(state=tk.NORMAL)
+    descargar_resultado2_button.config(state=tk.NORMAL)
     # Asigna el resultado procesado a una variable global o utiliza según tu necesidad
     global Resultado
     Resultado = resultado_procesado
 
 
 # Función para descargar el resultado del procesamiento
-def descargar_resultado():
-    global Resultado
+def descargar_resultado(df, nombre):
     file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
     if file_path:
-        Resultado.to_excel(file_path, index=False)
-        mostrar_mensaje(ruta_label, f"Proceso finalizado.\nResultado guardado en: {file_path}")
+        df.to_excel(file_path, index=False)
+        mostrar_mensaje(ruta_label, f"Proceso finalizado.\nResultado guardado en: {file_path} como {nombre}")
     else:
         mostrar_mensaje(ruta_label, "Guardado cancelado")
+
 
 # Obtener el alto de la barra de tareas
 def get_taskbar_height():
@@ -174,7 +187,7 @@ taskbar_height = get_taskbar_height()
 
 # Definir las dimensiones de la ventana
 window_width = 750
-window_height = 735
+window_height = 780
 
 # Calcular la posición para centrar la ventana
 x = (screen_width // 2) - (window_width // 2)
@@ -186,42 +199,45 @@ root.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
 # Etiquetas para mostrar mensajes
 msg1_label = tk.Label(root, text="1. Defina los parámetros inciales:", justify="left")
-msg1_label.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky='w')
+msg1_label.grid(row=1, column=0, columnspan=5, padx=10, pady=10, sticky='w')
 
 
 
-fecha_guardada_label = tk.Label(root, text="")
-fecha_guardada_label.grid(row=3, column=0, columnspan=4, padx=10, pady=10)
+# fecha_guardada_label = tk.Label(root, text="")
+# fecha_guardada_label.grid(row=3, column=0, columnspan=4, padx=10, pady=10)
 
 msg2_label = tk.Label(root, text="2. Cargue los siguientes archivos:")
 msg2_label.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky='w') 
 
+pendienticos_label = tk.Label(root, text="")
+pendienticos_label.grid(row=5, column=2, columnspan=5, padx=10, pady=10)
+
 flypass_label = tk.Label(root, text="")
-flypass_label.grid(row=5, column=2, padx=10, pady=10)  
+flypass_label.grid(row=6, column=2, columnspan=3, padx=10, pady=10)  
 
 general_label = tk.Label(root, text="")
-general_label.grid(row=6, column=2, padx=10, pady=10)  
+general_label.grid(row=7, column=2, columnspan=3, padx=10, pady=10)  
 
 descargue_label = tk.Label(root, text="")
-descargue_label.grid(row=7, column=2, padx=10, pady=10)  
+descargue_label.grid(row=8, column=2, columnspan=3, padx=10, pady=10)  
 
 trayectos_label = tk.Label(root, text="")
-trayectos_label.grid(row=8, column=2, padx=10, pady=10)  
+trayectos_label.grid(row=9, column=2, columnspan=3, padx=10, pady=10)  
 
 acumulado_label = tk.Label(root, text="")
-acumulado_label.grid(row=9, column=2, padx=10, pady=10) 
+acumulado_label.grid(row=10, column=2, columnspan=3, padx=10, pady=10) 
 
 msg5_label = tk.Label(root, text="\n")
-msg5_label.grid(row=10, column=2, columnspan=2, padx=10, pady=10) 
+msg5_label.grid(row=11, column=2, columnspan=2, padx=10, pady=10) 
 
 msg3_label = tk.Label(root, text="3. Ejecute el proceso:", justify="left")
-msg3_label.grid(row=11, column=0, columnspan=2, padx=10, pady=10, sticky='w') 
+msg3_label.grid(row=12, column=0, columnspan=2, padx=10, pady=10, sticky='w') 
 
 resultado_label = tk.Label(root, text="")
-resultado_label.grid(row=13, column=2, columnspan=2, padx=10, pady=10)  
+resultado_label.grid(row=14, column=2, columnspan=2, padx=10, pady=10)  
 
 msg4_label = tk.Label(root, text="4. Descargue los archivos:", justify="left")
-msg4_label.grid(row=14, column=0, columnspan=2, padx=10, pady=10, sticky='w')
+msg4_label.grid(row=15, column=0, columnspan=2, padx=10, pady=10, sticky='w')
 
 
 
@@ -230,26 +246,29 @@ msg4_label.grid(row=14, column=0, columnspan=2, padx=10, pady=10, sticky='w')
 
 
 ruta_label = tk.Label(root, text="")
-ruta_label.grid(row=16, column=0, columnspan=4, padx=10, pady=10)  
+ruta_label.grid(row=17, column=0, columnspan=4, padx=10, pady=10)  
 
   
 
 
 # Botones para cargar archivos
+cargar_pendientes_button = tk.Button(root, text="Cargar Pendientes (Opc)", command=cargar_pendientes, width=20)
+cargar_pendientes_button.grid(row=5, column=1, padx=10, pady=10)
+
 cargar_flypass_button = tk.Button(root, text="Cargar Flypass", command=cargar_flypass, width=20)
-cargar_flypass_button.grid(row=5, column=1, padx=10, pady=10)  
+cargar_flypass_button.grid(row=6, column=1, padx=10, pady=10)  
 
 cargar_general_button = tk.Button(root, text="Cargar MF General", command=cargar_general, width=20)
-cargar_general_button.grid(row=6, column=1, padx=10, pady=10)  
+cargar_general_button.grid(row=7, column=1, padx=10, pady=10)  
 
 cargar_descargue_button = tk.Button(root, text="Cargar MF Descargue", command=cargar_descargue, width=20)
-cargar_descargue_button.grid(row=7, column=1, padx=10, pady=10)  
+cargar_descargue_button.grid(row=8, column=1, padx=10, pady=10)  
 
 cargar_trayectos_button = tk.Button(root, text="Cargar Trayectos", command=cargar_trayectos, width=20)
-cargar_trayectos_button.grid(row=8, column=1, padx=10, pady=10)  
+cargar_trayectos_button.grid(row=9, column=1, padx=10, pady=10)  
 
 cargar_acumulado_button = tk.Button(root, text="Cargar Acumulado", command=cargar_acumulado, width=20)
-cargar_acumulado_button.grid(row=9, column=1, padx=10, pady=10) 
+cargar_acumulado_button.grid(row=10, column=1, padx=10, pady=10) 
 
 
 # Menús desplegables para seleccionar el mes y el corte
@@ -268,11 +287,11 @@ mes_dropdown.grid(row=2, column=1, padx=10, pady=10)
 
 corte_dropdown = tk.OptionMenu(root, corte_select, *cortes.keys())
 corte_dropdown.config(width=menu_width)
-corte_dropdown.grid(row=2, column=2, padx=10, pady=10)
+corte_dropdown.grid(row=2, column=2, columnspan=4, padx=10, pady=10)
 
 # Botón para confirmar selección de fechas
 confirmar_button = tk.Button(root, text="Confirmar Selección", command=actualizar_fechas)
-confirmar_button.grid(row=3, column=1, columnspan=2, padx=10, pady=10)
+confirmar_button.grid(row=3, column=1, columnspan=3, padx=10, pady=10)
 
 
 
@@ -281,15 +300,15 @@ confirmar_button.grid(row=3, column=1, columnspan=2, padx=10, pady=10)
 
 # Botón para procesar la información (inicialmente deshabilitado)
 procesar_button = tk.Button(root, text="Procesar Información", command=procesar_informacion, width=20, state=tk.DISABLED)
-procesar_button.grid(row=12, column=1, padx=10, pady=10)
+procesar_button.grid(row=13, column=1, padx=10, pady=10)
 
-# Botón para descargar el resultado (inicialmente deshabilitado)
-descargar_resultado_button = tk.Button(root, text="Tabla SoluING", command=descargar_resultado, width=20, state=tk.DISABLED)
-descargar_resultado_button.grid(row=15, column=1, padx=10, pady=10)
+# Botón para descargar el primer resultado
+descargar_resultado_button = tk.Button(root, text="Tabla SoluING", command=lambda: descargar_resultado(Resultado[0], "Tabla SoluING"), width=20, state=tk.DISABLED)
+descargar_resultado_button.grid(row=16, column=1, padx=10, pady=10)
 
-# Botón para descargar el resultado (inicialmente deshabilitado)
-descargar_resultado2_button = tk.Button(root, text="Pendientes", command=descargar_resultado, width=20, state=tk.DISABLED)
-descargar_resultado2_button.grid(row=15, column=2, padx=10, pady=10)
+# Botón para descargar el segundo resultado
+descargar_resultado2_button = tk.Button(root, text="Pendientes", command=lambda: descargar_resultado(Resultado[1], "Pendientes"), width=20, state=tk.DISABLED)
+descargar_resultado2_button.grid(row=16, column=2, padx=10, pady=10)
 
 # Ejecutar el bucle principal de Tkinter
 root.mainloop()

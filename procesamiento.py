@@ -12,7 +12,7 @@ df_etapa3 = pd.DataFrame()
 flypass_prev_pdte = pd.DataFrame()
 general_df_original = pd.DataFrame()
 
-def procesar_archivos(flypass_df, descargue_df, fecha_inicio_df, fecha_fin_df,general_df):
+def procesar_archivos(flypass_df, descargue_df, fecha_inicio_df, fecha_fin_df,general_df,Pendientes_df):
     print(fecha_inicio_df)
     print(fecha_fin_df)
 #def procesar_archivos(flypass_df, general_df, descargue_df, trayectos_df, acumulado_df, fecha_inicio_df, fecha_fin_df):
@@ -20,6 +20,11 @@ def procesar_archivos(flypass_df, descargue_df, fecha_inicio_df, fecha_fin_df,ge
     # TRANSFORMACION DE ARCHIVO FLYPASS PARA EXTRAER SOLO LOS REGISTROS QUE HACEN PARTE DEL CORTE SOLICITADO
     flypass_df = modificacion_flypass(flypass_df, fecha_inicio_df, fecha_fin_df)
 
+    if not Pendientes_df.empty:
+        flypass_df = pegar_pendientes(flypass_df, Pendientes_df)
+        print("añadio los pendientes")
+
+    print("continuo melo")
     flypass_plantilla = flypass_df.copy()
     
     # TRANSFORMACIÓN DE ARCHIVO MF DESCARGUE PARA DEJAR SOLO LA PLACA - MANIFIESTO - CARGUE - DESCARGUE
@@ -62,9 +67,9 @@ def procesar_archivos(flypass_df, descargue_df, fecha_inicio_df, fecha_fin_df,ge
     # Extraccion de pendientes
     df_pendientes = df_flypass_MFenc[df_flypass_MFenc['MFTO ENCONTRADO'].isnull()] 
 
-    df_TablaSoluING = df_pendientes
+    df_TablaSoluING = flypass_df
 
-    return df_TablaSoluING
+    return df_TablaSoluING, df_pendientes
 
 def modificacion_flypass(flypass_df, fecha_inicio_df, fecha_fin_df):
 
@@ -100,6 +105,31 @@ def modificacion_flypass(flypass_df, fecha_inicio_df, fecha_fin_df):
 
 
     return flypass_df
+
+
+def pegar_pendientes(flypass_df,Pendientes_df):
+
+    # Descarte de registros relacionados a las PLACAS administrativas
+    Pendientes_df.drop(Pendientes_df[Pendientes_df['PLACA'].isin(['GTN725', 'GTS333'])].index, inplace=True)
+
+    columnas_a_eliminar_pend = ['ID','MFTO ENCONTRADO']
+    Pendientes_df = Pendientes_df.drop(columns=columnas_a_eliminar_pend)
+
+    # Insertar una nueva columna "ID" en el DataFrame Pendientes_df
+    # Calcular la longitud del DataFrame flypass_df
+    longitud_pend = len(Pendientes_df)
+
+    # Generar una lista de valores para la columna "ID" comenzando desde 0.0001
+    valores_id = [0.0001 + i * 0.0001 for i in range(longitud_pend)]
+
+    # Insertar la columna "ID" en el DataFrame Pendientes_df
+    Pendientes_df.insert(0, "ID", valores_id)
+
+    # Unión de los DataFrames, pendientes mes pasado y mf corte actual - luego organizado por el ID
+    df_concat_fly_pend = pd.concat([flypass_df, Pendientes_df]).sort_values(by=['ID'], ascending=[True])
+
+
+    return df_concat_fly_pend
 
 def modificacion_descargue(descargue_df):
 
@@ -139,7 +169,14 @@ def cruce_fly_descargue(flypass_df,descargue_df):
     filtered_df = merged_df[(merged_df['FECHA_MVTO'] >= merged_df['CARGUE']) & (merged_df['FECHA_MVTO'] <= merged_df['DESCARGUE'])]
 
     # # Creamos la columna 'MFTO ENCONTRADO' con los valores de 'MFTO' cuando la 'PLACA' coincide y la 'FECHA_MVTO' está dentro del rango
-    filtered_df.loc[:, 'MFTO ENCONTRADO'] = filtered_df['MFTO'].copy()
+    #filtered_df.loc[:, 'MFTO ENCONTRADO'] = filtered_df['MFTO']
+    
+    
+    filtered_df = filtered_df.copy()
+    filtered_df['MFTO ENCONTRADO'] = filtered_df['MFTO'].copy()
+
+
+
 
     # # Cuando la 'PLACA' coincide pero la 'FECHA_MVTO' no está dentro del rango, asignamos 'No encontrado'
     filtered_df.loc[~filtered_df['MFTO ENCONTRADO'].notnull(), 'MFTO ENCONTRADO'] = 'No encontrado porque la FECHA_MVTO no está dentro del rango CARGUE y DESCARGUE de la placa correspondiente'
@@ -194,7 +231,9 @@ def modificar_sin_datos(etapa2_sin_datos):
 
     return etapa2_sin_datos
 
-def cruce_fly_general(etapa2_sin_datos,general_df):
+import pandas as pd
+
+def cruce_fly_general(etapa2_sin_datos, general_df):
     
     # Convertimos la columna 'FECHA_MVTO' a tipo datetime en df1
     etapa2_sin_datos['FECHA_MVTO_x'] = pd.to_datetime(etapa2_sin_datos['FECHA_MVTO_x'])
@@ -203,16 +242,16 @@ def cruce_fly_general(etapa2_sin_datos,general_df):
 
     ETP2GEN_merged_df = pd.merge(etapa2_sin_datos, general_df, on='PLACA', how='left')
 
-    # # Filtramos las filas donde la 'FECHA_MVTO' está dentro del rango de 'CARGUE' y 'DESCARGUE'
-    ETP2GEN_filtered_df = ETP2GEN_merged_df[(ETP2GEN_merged_df['FECHA_MVTO_x'] >= ETP2GEN_merged_df['CARGUE']) & (ETP2GEN_merged_df['FECHA_MVTO_x'] <= ETP2GEN_merged_df['DESCARGUE'])]
+    # Filtramos las filas donde la 'FECHA_MVTO' está dentro del rango de 'CARGUE' y 'DESCARGUE'
+    ETP2GEN_filtered_df = ETP2GEN_merged_df[(ETP2GEN_merged_df['FECHA_MVTO_x'] >= ETP2GEN_merged_df['CARGUE']) & (ETP2GEN_merged_df['FECHA_MVTO_x'] <= ETP2GEN_merged_df['DESCARGUE'])].copy()
 
-    # # Creamos la columna 'MFTO ENCONTRADO' con los valores de 'MFTO' cuando la 'PLACA' coincide y la 'FECHA_MVTO' está dentro del rango
-    ETP2GEN_filtered_df.loc[:, 'MFTO ENCONTRADO'] = ETP2GEN_filtered_df['MFTO'].copy()
+    # Creamos la columna 'MFTO ENCONTRADO' con los valores de 'MFTO' cuando la 'PLACA' coincide y la 'FECHA_MVTO' está dentro del rango
+    ETP2GEN_filtered_df['MFTO ENCONTRADO'] = ETP2GEN_filtered_df['MFTO']
 
-    # # Cuando la 'PLACA' coincide pero la 'FECHA_MVTO' no está dentro del rango, asignamos 'No encontrado'
+    # Cuando la 'PLACA' coincide pero la 'FECHA_MVTO' no está dentro del rango, asignamos 'No encontrado'
     ETP2GEN_filtered_df.loc[~ETP2GEN_filtered_df['MFTO ENCONTRADO'].notnull(), 'MFTO ENCONTRADO'] = 'No encontrado porque la FECHA_MVTO no está dentro del rango CARGUE y DESCARGUE de la placa correspondiente'
 
-    # # Eliminamos registros duplicados basados en la columna 'PLACA'
+    # Eliminamos registros duplicados basados en la columna 'PLACA'
     ETP2GEN_df_acumulado = ETP2GEN_filtered_df.drop_duplicates(subset=['ID'])
 
     ETP2GEN_df_acumulado = ETP2GEN_df_acumulado[['ID', 'FECHA_MVTO_x', 'PLACA', 'MFTO ENCONTRADO']]
@@ -220,6 +259,7 @@ def cruce_fly_general(etapa2_sin_datos,general_df):
     ETP2GEN_df_acumulado = ETP2GEN_df_acumulado.rename(columns={'FECHA_MVTO_x': 'FECHA_MVTO'})
 
     return ETP2GEN_df_acumulado
+
 
 def hallar_pendientes(etapa2_sin_datos,df_etapa3):
     
