@@ -12,7 +12,9 @@ df_etapa3 = pd.DataFrame()
 flypass_prev_pdte = pd.DataFrame()
 general_df_original = pd.DataFrame()
 
-def procesar_archivos(flypass_df, descargue_df, fecha_inicio_df, fecha_fin_df,general_df,Pendientes_df):
+
+
+def procesar_archivos(flypass_df, descargue_df, fecha_inicio_df, fecha_fin_df,general_df,Pendientes_df,Trayectos_df,acumulado_maestro_df):
     print(fecha_inicio_df)
     print(fecha_fin_df)
 #def procesar_archivos(flypass_df, general_df, descargue_df, trayectos_df, acumulado_df, fecha_inicio_df, fecha_fin_df):
@@ -76,9 +78,71 @@ def procesar_archivos(flypass_df, descargue_df, fecha_inicio_df, fecha_fin_df,ge
     #Extracción de Informacion de general para armado 1 de TablaSoluING
     Tabla1 = cruce_con_general(general_df_original,df_mp_consolidada)
 
-    df_TablaSoluING = Tabla1
+    Trayectos_df = transformar_trayectos(Trayectos_df)
 
-    return df_TablaSoluING, df_pendientes
+    #Cruce de informacion para traer codigo de trayectos
+    Tabla2 = pd.merge(Tabla1, Trayectos_df, on='RUTA', how='left')
+
+    # Logica para hallar Ruta 1
+    Tabla2['Orig'] = Tabla2['Origen'].str.split('(').str[0]
+    Tabla2['Dest'] = Tabla2['Destino'].str.split('(').str[0]
+    Tabla2['Ruta 1'] = Tabla2['Orig'].str.cat(Tabla2['Dest'], sep=' - ')
+    columnas_a_eliminar10 = ['Orig','Dest']
+    Tabla3 = Tabla2.drop(columns=columnas_a_eliminar10)
+    # _____________________________________________________________________
+
+    # Asignar tipo de Documento
+    Tabla3['Tipo Doc'] = Tabla3['Total'].apply(determinar_tipo_doc)
+
+    # Agregar la columna "Nit Tercero" con el valor constante "900219834"
+    Tabla3['Nit Tercero'] = 900219834
+    Tabla3['Nombre Tercero'] = 'F2X'
+    Tabla3['MARCA'] = 'CORTE ACTUAL'
+
+    # Reorganizar las columnas cambiando el orden de los nombres de las columnas
+    Tabla3 = Tabla3[['Año Apl', 'Mes Apl', 'Dia Apl', 'Placa', 'Referencia1', 'Manifiesto', 'RUTA', 'CONDUCTOR', 'CLIENTE', 'Peaje', 'Total', 'Nit Tercero', 'Nombre Tercero', 'Tipo Doc', 'Origen', 'Destino', 'Ruta 1', 'Cod.rut.Prp', 'MARCA']]
+
+    df_masteracu_y_actual = pd.concat([acumulado_maestro_df, Tabla3]).sort_values(by=['Placa','Manifiesto','Mes Apl','Dia Apl'], ascending=[True, True, True, True])
+
+    df_masteracu_y_actual['Numerox'] = ''
+
+    # Agrupar por 'Manifiesto' y contar el número de ocurrencias dentro de cada grupo
+    df_masteracu_y_actual['Numerox'] = df_masteracu_y_actual.groupby('Manifiesto').cumcount()
+
+    # Ajustar la numeración para que inicie en 0 o vacío
+    df_masteracu_y_actual['Numerox'] = df_masteracu_y_actual['Numerox'].apply(lambda x: '' if x == 0 else x + 0)
+
+    # Añadir el valor del 'Manifiesto' a la secuencia generada
+    df_masteracu_y_actual['Numerox'] = df_masteracu_y_actual['Manifiesto'].astype(str) + df_masteracu_y_actual['Numerox'].astype(str)
+
+    # Copiar df_masteracu_y_actual a df_acu_master
+    df_acu_master = df_masteracu_y_actual.copy()
+
+    # Copiar df_masteracu_y_actual a df_TablaSoluING
+    df_TablaSoluING = df_masteracu_y_actual.copy()
+
+    df_TablaSoluING = df_TablaSoluING[df_TablaSoluING['MARCA'] == 'CORTE ACTUAL']
+    df_TablaSoluING = df_TablaSoluING.sort_values(by=['Mes Apl', 'Dia Apl'], ascending=[True, True])
+    df_TablaSoluING.drop(columns=['Documento'], inplace=True)
+    df_TablaSoluING.drop(columns=['MARCA'], inplace=True)
+    df_TablaSoluING = df_TablaSoluING.rename(columns={'Numerox': 'Documento'})
+    
+    try:
+        # Intenta convertir la columna "Documento" a números
+        df_TablaSoluING['Documento'] = pd.to_numeric(df_TablaSoluING['Documento'])
+    except ValueError:
+        # Captura cualquier error de conversión
+        # Asigna nuevamente los valores originales a aquellos que generaron el error
+        df_TablaSoluING['Documento'] = df_TablaSoluING['Documento']
+
+
+    df_acu_master.drop(columns=['Documento'], inplace=True)
+    df_acu_master.drop(columns=['MARCA'], inplace=True)
+    df_acumulado_total = df_acu_master.rename(columns={'Numerox': 'Documenticos'})
+
+     
+
+    return df_TablaSoluING, df_pendientes, df_acumulado_total
 
 def modificacion_flypass(flypass_df, fecha_inicio_df, fecha_fin_df):
 
@@ -341,3 +405,35 @@ def cruce_con_general(general_df_original,df_mp_consolidada):
     cruce_general = cruce_general.drop(columns=columnas_a_eliminar7)
 
     return cruce_general
+
+
+def transformar_trayectos(Trayectos_df):
+
+    # Eliminar las columnas
+    columnas_a_eliminar8 = ['Codigo', 'Descripcion', 'RutaAlterna', 'Kilometros', 'RutaAlterna1', 'RutaTercero', 'CodRutaGPS', 'IndMciaPeligrosa', 'IndUnigis', 'IndGPS']
+    trans_trayectos = Trayectos_df.drop(columns=columnas_a_eliminar8)
+
+    trans_trayectos['RUTA'] = trans_trayectos['Origen'].str.cat(trans_trayectos['Destino'], sep='-')
+
+    # Eliminar las columnas
+    columnas_a_eliminar9 = ['Origen','Destino']
+    trans_trayectos = trans_trayectos.drop(columns=columnas_a_eliminar9)
+
+    trans_trayectos = trans_trayectos.rename(columns={'RutaPropio': 'Cod.rut.Prp'})
+
+    # Extracción de registros con codigo
+    trans_trayectos = trans_trayectos[trans_trayectos['Cod.rut.Prp'].notnull()]
+
+    # Eliminamos registros duplicados basados en la columna 'RUTA'
+    trans_trayectos = trans_trayectos.drop_duplicates(subset=['RUTA'])
+
+    return trans_trayectos
+
+# Definir la función para determinar el valor de 'Tipo Doc'
+def determinar_tipo_doc(total):
+    if total < 0:
+        return 'PEAJES CGV04'
+    elif total > 0:
+        return 'DFLY'
+    else:
+        return ''

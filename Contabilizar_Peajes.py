@@ -13,6 +13,9 @@ fecha_fin = None
 
 Pendientes = pd.DataFrame()
 
+secuencia = -1
+manifiesto_anterior = None
+
 # Diccionarios para los nombres de los meses y los cortes
 meses = {
     1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril", 5: "Mayo", 6: "Junio",
@@ -116,7 +119,7 @@ def cargar_descargue():
 # Función para cargar el archivo "Trayectos"
 def cargar_trayectos():
     global Trayectos
-    Trayectos, nombre_archivo = cargar_archivo()
+    Trayectos, nombre_archivo = cargar_archivo2()
     if Trayectos is not None:
         mensaje = f"{nombre_archivo} cargado correctamente"
         mostrar_mensaje(trayectos_label, mensaje)
@@ -133,8 +136,7 @@ def cargar_acumulado():
 
 # Función para comprobar si todos los archivos están cargados y habilitar el botón de procesamiento
 def check_archivos_cargados():
-    if 'Flypass' in globals() and 'Descargue' in globals() and 'General' in globals():
-    #if 'Flypass' in globals() and 'General' in globals() and 'Descargue' in globals() and 'Trayectos' in globals() and 'Acumulado' in globals():
+    if 'Flypass' in globals() and 'Descargue' in globals() and 'General' in globals() and 'Trayectos' in globals() and 'Acumulado' in globals():
         if fecha_inicio is not None and fecha_fin is not None:  # Verifica si ambas fechas no son None
             mostrar_mensaje(msg5_label, "¡Todo listo\npara procesar!")
             procesar_button.config(state=tk.NORMAL)
@@ -146,12 +148,12 @@ def procesar_informacion():
     mostrar_mensaje(resultado_label, "Procesando... Por favor, espere.")
 
     # Llama a la función de procesamiento y pasa los DataFrames de los archivos cargados como argumentos
-    resultado_procesado = procesar_archivos(Flypass, Descargue,fecha_inicio,fecha_fin,General,Pendientes)
-    #resultado_procesado = procesar_archivos(Flypass, General, Descargue, Trayectos, Acumulado,fecha_inicio,fecha_fin)
+    resultado_procesado = procesar_archivos(Flypass, Descargue,fecha_inicio,fecha_fin,General,Pendientes,Trayectos,Acumulado)
     # Muestra un mensaje de éxito y habilita el botón para descargar el resultado
     mostrar_mensaje(resultado_label, "Información procesada correctamente.")
     descargar_resultado_button.config(state=tk.NORMAL)
     descargar_resultado2_button.config(state=tk.NORMAL)
+    descargar_resultado3_button.config(state=tk.NORMAL)
     # Asigna el resultado procesado a una variable global o utiliza según tu necesidad
     global Resultado
     Resultado = resultado_procesado
@@ -309,6 +311,10 @@ descargar_resultado_button.grid(row=16, column=1, padx=10, pady=10)
 # Botón para descargar el segundo resultado
 descargar_resultado2_button = tk.Button(root, text="Pendientes", command=lambda: descargar_resultado(Resultado[1], "Pendientes"), width=20, state=tk.DISABLED)
 descargar_resultado2_button.grid(row=16, column=2, padx=10, pady=10)
+
+# Botón para descargar el segundo resultado
+descargar_resultado3_button = tk.Button(root, text="Acumulado", command=lambda: descargar_resultado(Resultado[2], "Acumulado"), width=20, state=tk.DISABLED)
+descargar_resultado3_button.grid(row=16, column=3, padx=10, pady=10)
 
 # Ejecutar el bucle principal de Tkinter
 root.mainloop()
