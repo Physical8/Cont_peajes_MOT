@@ -5,6 +5,7 @@ from datetime import datetime
 import pandas as pd
 import ctypes
 import os
+import calendar
 import threading
 
 # Variables globales para las fechas
@@ -26,27 +27,28 @@ cortes = {
     "Corte 1": (1, 7), "Corte 2": (8, 14), "Corte 3": (15, 21), "Corte 4": (22, 31)
 }
 
-# Función para actualizar las fechas de inicio y fin según la selección de los menús desplegables
 def actualizar_fechas():
     global fecha_inicio, fecha_fin
     mes_index = list(meses.keys())[list(meses.values()).index(mes_select.get())]  # Obtiene el índice del mes seleccionado
     corte_seleccionado = corte_select.get()
     if mes_index in meses.keys() and corte_seleccionado in cortes.keys():
-        dia_inicio, dia_fin = cortes[corte_seleccionado]
-        fecha_inicio = f"{dia_inicio:02d}/{mes_index:02d}/2024"
-        fecha_fin = f"{dia_fin:02d}/{mes_index:02d}/2024"
-        fecha_inicio = datetime.strptime(fecha_inicio, "%d/%m/%Y").strftime("%Y-%m-%d")
-        fecha_fin = datetime.strptime(fecha_fin, "%d/%m/%Y").strftime("%Y-%m-%d")
+        dia_inicio, _ = cortes[corte_seleccionado]  # Ignoramos el día final del corte por ahora
+        ultimo_dia_mes = calendar.monthrange(2024, mes_index)[1]  # Obtenemos el último día del mes seleccionado
+        fecha_inicio = datetime(2024, mes_index, dia_inicio)
+        fecha_fin = datetime(2024, mes_index, ultimo_dia_mes)
         # Deshabilitar los menús desplegables después de confirmar la selección
         mes_dropdown["state"] = "disabled"
         corte_dropdown["state"] = "disabled"
         confirmar_button.config(state="disabled")
         # Verificar en consola
         print("Fechas")
-        print(fecha_inicio)
-        print(fecha_fin)
+        print(fecha_inicio.strftime("%Y-%m-%d"))
+        print(fecha_fin.strftime("%Y-%m-%d"))
         # Verificar si todos los archivos están cargados y habilitar el botón de procesamiento
         check_archivos_cargados()
+
+
+
 
 # Función para cargar un archivo de Excel
 def cargar_archivo():
@@ -190,7 +192,7 @@ taskbar_height = get_taskbar_height()
 
 # Definir las dimensiones de la ventana
 window_width = 750
-window_height = 780
+window_height = 620
 
 # Calcular la posición para centrar la ventana
 x = (screen_width // 2) - (window_width // 2)
@@ -202,7 +204,7 @@ root.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
 # Etiquetas para mostrar mensajes
 msg1_label = tk.Label(root, text="1. Defina los parámetros inciales:", justify="left")
-msg1_label.grid(row=1, column=0, columnspan=5, padx=10, pady=10, sticky='w')
+msg1_label.grid(row=0, column=0, padx=10, pady=10, sticky='w')
 
 
 
@@ -286,36 +288,32 @@ menu_width = 20
 
 mes_dropdown = tk.OptionMenu(root, mes_select, *meses.values())
 mes_dropdown.config(width=menu_width)
-mes_dropdown.grid(row=2, column=1, padx=10, pady=10)
+mes_dropdown.grid(row=0, column=1, padx=10, pady=10)
 
 corte_dropdown = tk.OptionMenu(root, corte_select, *cortes.keys())
 corte_dropdown.config(width=menu_width)
-corte_dropdown.grid(row=2, column=2, columnspan=4, padx=10, pady=10)
+corte_dropdown.grid(row=0, column=2, padx=10, pady=10)
 
 # Botón para confirmar selección de fechas
 confirmar_button = tk.Button(root, text="Confirmar Selección", command=actualizar_fechas)
-confirmar_button.grid(row=3, column=1, columnspan=3, padx=10, pady=10)
-
-
-
-
+confirmar_button.grid(row=0, column=3, padx=10, pady=10)
 
 
 # Botón para procesar la información (inicialmente deshabilitado)
 procesar_button = tk.Button(root, text="Procesar Información", command=procesar_informacion, width=20, state=tk.DISABLED)
-procesar_button.grid(row=13, column=1, padx=10, pady=10)
+procesar_button.grid(row=12, column=1, padx=10, pady=10)
 
 # Botón para descargar el primer resultado
 descargar_resultado_button = tk.Button(root, text="Tabla SoluING", command=lambda: descargar_resultado(Resultado[0], "Tabla SoluING"), width=20, state=tk.DISABLED)
-descargar_resultado_button.grid(row=16, column=1, padx=10, pady=10)
+descargar_resultado_button.grid(row=15, column=1, padx=10, pady=10)
 
 # Botón para descargar el segundo resultado
 descargar_resultado2_button = tk.Button(root, text="Pendientes", command=lambda: descargar_resultado(Resultado[1], "Pendientes"), width=20, state=tk.DISABLED)
-descargar_resultado2_button.grid(row=16, column=2, padx=10, pady=10)
+descargar_resultado2_button.grid(row=15, column=2, padx=10, pady=10)
 
 # Botón para descargar el segundo resultado
 descargar_resultado3_button = tk.Button(root, text="Acumulado", command=lambda: descargar_resultado(Resultado[2], "Acumulado"), width=20, state=tk.DISABLED)
-descargar_resultado3_button.grid(row=16, column=3, padx=10, pady=10)
+descargar_resultado3_button.grid(row=15, column=3, padx=10, pady=10)
 
 # Ejecutar el bucle principal de Tkinter
 root.mainloop()
