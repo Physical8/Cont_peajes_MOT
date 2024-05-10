@@ -381,11 +381,14 @@ def consolidar_transa(df_materia_prima):
 
 def cruce_con_general(general_df_original,df_mp_consolidada):
 
+    general_df_original = general_df_original.drop_duplicates(subset=["Manifiesto"])
+
     # Eliminar las columnas
     columnas_a_eliminar6 = ['Viaje', 'Fecha', 'Placa', 'Vinculo', 'Tarifa', 'Flete', 'FleteTotal', 'FleteNeto', 'Primer Anticipo', 'Otros Anticipos', 'Utilidad', '%', 'TipoVehi', 'TipoCarga', 'DescProducto', 'FacturarA', 'LineaNegocio', 'Remesa', 'Nombre Tenedor', 'Apellidos Tenedor', 'Documento Tenedor', 'Carroceria', 'Oficina', 'CentroCosto', 'UsuLiquida', 'UsuDespacha', 'UsuCumple', 'UsuColoca']
     general_df_original = general_df_original.drop(columns=columnas_a_eliminar6)
 
     cruce_general = pd.merge(df_mp_consolidada, general_df_original, on='Manifiesto', how='left')
+
 
     cruce_general = cruce_general.rename(columns={'PLACA': 'Placa', 'TRANSACCION': 'Referencia1', 'Ruta': 'RUTA', 'Cliente': 'CLIENTE', 'VALOR_REAL': 'Total'})
 
