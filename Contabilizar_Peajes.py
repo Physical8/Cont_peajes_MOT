@@ -32,21 +32,33 @@ def actualizar_fechas():
     mes_index = list(meses.keys())[list(meses.values()).index(mes_select.get())]  # Obtiene el índice del mes seleccionado
     corte_seleccionado = corte_select.get()
     if mes_index in meses.keys() and corte_seleccionado in cortes.keys():
-        dia_inicio, _ = cortes[corte_seleccionado]  # Ignoramos el día final del corte por ahora
-        ultimo_dia_mes = calendar.monthrange(2024, mes_index)[1]  # Obtenemos el último día del mes seleccionado
+        dia_inicio, dia_final = cortes[corte_seleccionado]
+        
+        # Obtenemos el último día del mes seleccionado
+        ultimo_dia_mes = calendar.monthrange(2024, mes_index)[1]
+        
+        # Establecemos la fecha de inicio
         fecha_inicio = datetime(2024, mes_index, dia_inicio)
-        fecha_fin = datetime(2024, mes_index, ultimo_dia_mes)
+        
+        # Si es el Corte 4, ignoramos el día final y tomamos el último día del mes
+        if corte_seleccionado == "Corte 4":
+            fecha_fin = datetime(2024, mes_index, ultimo_dia_mes)
+        else:
+            # Para otros cortes, tomamos el día final del corte
+            fecha_fin = datetime(2024, mes_index, dia_final)
+        
         # Deshabilitar los menús desplegables después de confirmar la selección
         mes_dropdown["state"] = "disabled"
         corte_dropdown["state"] = "disabled"
         confirmar_button.config(state="disabled")
+        
         # Verificar en consola
         print("Fechas")
         print(fecha_inicio.strftime("%Y-%m-%d"))
         print(fecha_fin.strftime("%Y-%m-%d"))
+        
         # Verificar si todos los archivos están cargados y habilitar el botón de procesamiento
         check_archivos_cargados()
-
 
 
 
