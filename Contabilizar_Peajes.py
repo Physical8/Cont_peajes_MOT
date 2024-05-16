@@ -60,7 +60,7 @@ def actualizar_fechas():
         # Verificar si todos los archivos están cargados y habilitar el botón de procesamiento
         check_archivos_cargados()
 
-
+#CambioFIN
 
 # Función para cargar un archivo de Excel
 def cargar_archivo():
