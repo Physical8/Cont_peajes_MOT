@@ -102,7 +102,7 @@ def procesar_archivos(flypass_df, descargue_df, fecha_inicio_df, fecha_fin_df,ge
     # Reorganizar las columnas cambiando el orden de los nombres de las columnas
     Tabla3 = Tabla3[['Año Apl', 'Mes Apl', 'Dia Apl', 'Placa', 'Referencia1', 'Manifiesto', 'RUTA', 'CONDUCTOR', 'CLIENTE', 'Peaje', 'Total', 'Nit Tercero', 'Nombre Tercero', 'Tipo Doc', 'Origen', 'Destino', 'Ruta 1', 'Cod.rut.Prp', 'MARCA']]
 
-    df_masteracu_y_actual = pd.concat([acumulado_maestro_df, Tabla3]).sort_values(by=['Placa','Manifiesto','Mes Apl','Dia Apl'], ascending=[True, True, True, True])
+    df_masteracu_y_actual = pd.concat([acumulado_maestro_df, Tabla3]).sort_values(by=['Placa','Manifiesto','Año Apl','Mes Apl','Dia Apl'], ascending=[True, True, True, True, True])
 
     df_masteracu_y_actual['Numerox'] = ''
 

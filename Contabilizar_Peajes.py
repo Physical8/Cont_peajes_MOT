@@ -8,6 +8,10 @@ import os
 import calendar
 import threading
 
+
+# Año actual dinámico
+current_year = datetime.now().year
+
 # Variables globales para las fechas
 fecha_inicio = None
 fecha_fin = None
@@ -35,18 +39,18 @@ def actualizar_fechas():
         dia_inicio, dia_final = cortes[corte_seleccionado]
         
         # Obtenemos el último día del mes seleccionado
-        ultimo_dia_mes = calendar.monthrange(2024, mes_index)[1]
+        ultimo_dia_mes = calendar.monthrange(current_year, mes_index)[1]
         
         # Establecemos la fecha de inicio
-        fecha_inicio = datetime(2024, mes_index, dia_inicio)
+        fecha_inicio = datetime(current_year, mes_index, dia_inicio)
         
         # Si es el Corte 4, ignoramos el día final y tomamos el último día del mes
         if corte_seleccionado == "Corte 4":
-            fecha_fin = datetime(2024, mes_index, ultimo_dia_mes)
+            fecha_fin = datetime(current_year, mes_index, ultimo_dia_mes)
         else:
             # Para otros cortes, tomamos el día final del corte
-            fecha_fin = datetime(2024, mes_index, dia_final)
-        
+            fecha_fin = datetime(current_year, mes_index, dia_final)
+         
         # Deshabilitar los menús desplegables después de confirmar la selección
         mes_dropdown["state"] = "disabled"
         corte_dropdown["state"] = "disabled"
